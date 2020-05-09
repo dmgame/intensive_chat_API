@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const cors = require('cors');
 const { url } = require('./config/db');
 const app = express();
 
@@ -11,6 +12,7 @@ const ROUTES = {
 
 const PORT = 3000;
 
+app.use(cors());
 app.use(express.json());
 
 // Connect to DB
