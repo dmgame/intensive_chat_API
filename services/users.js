@@ -13,10 +13,22 @@ async function createUser(data) {
   }
 }
 
-async function getUser(id) {
+async function getUser(email) {
   try {
-    const user = await User.findById(id);
+    const user = await User.findOne({ email });
     return user;
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
+
+async function userJoinChat(chatId, userId) {
+  try {
+    await User.updateOne(
+      { _id: userId, chats: { $nin: chatId } },
+      { $push: { chats: chatId } }
+    )
+    return true;
   } catch (err) {
     return Promise.reject(err);
   }
@@ -24,5 +36,6 @@ async function getUser(id) {
 
 module.exports = {
   createUser,
-  getUser
+  getUser,
+  userJoinChat
 }

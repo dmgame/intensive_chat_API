@@ -3,11 +3,6 @@ const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const userService = require('../services/users');
 
-
-router.get('/', authMiddleware, async (req, res) => {
-  res.status(200).send(`Email: ${req.locals.email}`);
-})
-
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const newUser = {
@@ -22,10 +17,10 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/:id', authMiddleware, async (req, res) => {
+router.get('/:email', authMiddleware, async (req, res) => {
   try {
-    const { id } = req.params;
-    const user = await userService.getUser(id);
+    const { email } = req.params;
+    const user = await userService.getUser(email);
     res.status(200).send(user);
   } catch (err) {
     res.status(400).send(err);
