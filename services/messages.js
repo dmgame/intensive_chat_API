@@ -20,9 +20,11 @@ async function newMessage({ chat, user, text }) {
       time: Date.now()
     }
 
-    const messages = await Message.create(newMessage)
+    const messages = await Message.create(newMessage);
+    const createdMessage = await Message.findById(messages._id)
+      .populate('user', ['firstName', 'lastName']);
 
-    return messages;
+    return createdMessage;
   } catch (err) {
     return Promise.reject(err);
   }

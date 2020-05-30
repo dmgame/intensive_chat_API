@@ -3,15 +3,17 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const { url } = require('./config/db');
 const app = express();
-const http = require('http');
+const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 // Services
 const chatsService = require('./services/chats');
+const userService = require('./services/users');
+const messagesService = require('./services/messages');
 // Routes
 const UserController = require('./routes/user');
 const ChatsController = require('./routes/chats');
 const MessagesController = require('./routes/messages');
-
+// Socket
 const SocketListeners = require('./socket/listeners');
 const SocketEmitters = require('./socket/emitters');
 
@@ -55,29 +57,46 @@ app.use(ROUTES.chats, ChatsController);
 app.use(ROUTES.messages, MessagesController);
 
 io.on('connection', (socket) => {
+  console.log('user connected')
   // Join chat
-  socket.on(SocketListeners.JOIN_CHAT, () => {
-    console.log(SocketListeners.JOIN_CHAT);
-    // emit
+  socket.on(SocketListeners.JOIN_CHAT, async ({chatId, userId, userName}) => {
+    try {
+      await userService.userJoinChat(chatId, userId);
+      socket.join(chatId);
+      io.in(chatId).emit(
+        SocketEmitters.NEW_USER_JOIN,
+        { userName, userId }
+      )
+      console.log(chatId, userId, userName)
+    } catch (err) {
+      console.log(err);
+    }
   });
 
-  //Select chat
-  socket.on(SocketListeners.SELECT_CHAT, () => {
-    console.log(SocketListeners.SELECT_CHAT);
+  socket.on(SocketListeners.SELECT_CHAT, ({ chatId }) => {
+    socket.join(chatId);
   });
 
-  socket.on(SocketListeners.USER_TYPING, () => {
-    console.log(SocketListeners.USER_TYPING);
-    // emit
+  socket.on(SocketListeners.USER_TYPING, ({ chatId }) => {
+    io.in(chatId).emit(
+      SocketEmitters.USER_TYPING,
+      { chatId }
+    );
   });
 
-  // New message
-  socket.on(SocketListeners.NEW_MESSAGE, () => {
-    console.log(SocketListeners.NEW_MESSAGE);
-    // emit
+  socket.on(SocketListeners.NEW_MESSAGE, async ({ chatId, userId, text }) => {
+    try {
+      const message = await messagesService.newMessage({ chat: chatId, user: userId, text });
+      io.in(chatId).emit(
+        SocketEmitters.NEW_MESSAGE,
+        message
+      );
+    } catch (err) {
+      console.log(err);
+    }
   });
 });
 
-app.listen(PORT, () => {``
+http.listen(PORT, () => {``
   console.log(`Server up and running, PORT: ${PORT}`);
 });
