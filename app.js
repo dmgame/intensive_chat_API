@@ -77,16 +77,18 @@ io.on('connection', (socket) => {
     socket.join(chatId);
   });
 
-  socket.on(SocketListeners.USER_TYPING, ({ chatId }) => {
+  socket.on(SocketListeners.USER_TYPING, ({ chatId, userId }) => {
     io.in(chatId).emit(
       SocketEmitters.USER_TYPING,
-      { chatId }
+      { chatId, userId }
     );
   });
 
   socket.on(SocketListeners.NEW_MESSAGE, async ({ chatId, userId, text }) => {
     try {
       const message = await messagesService.newMessage({ chat: chatId, user: userId, text });
+      await chatsService.setLastMessage(chatId, message._id);
+
       io.in(chatId).emit(
         SocketEmitters.NEW_MESSAGE,
         message
